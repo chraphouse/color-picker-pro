@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Color Picker Pro</title>
+  <style>
+    :root {
+      --bg: #0f0f17;
+      --bg2: #1a1a2e;
+      --border: #2a2a4a;
+      --text: #e0e0e0;
+      --text2: #888;
+      --accent: #8b5cf6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .header {
+      padding: 12px 14px 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+    /* Pick button */
+    .pick-section { padding: 14px; text-align: center; }
+    .pick-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .pick-btn:hover { background: #7c3aed; }
+    .pick-btn svg { flex-shrink: 0; }
+
+    /* Current color */
+    .current {
+      padding: 0 14px 14px;
+      display: none;
+    }
+    .current.show { display: block; }
+    .color-preview {
+      height: 48px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .formats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .format-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .format-label {
+      width: 36px;
+      font-size: 10px;
+      color: var(--text2);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .format-value {
+      flex: 1;
+      padding: 6px 8px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .format-value:hover { border-color: var(--accent); }
+    .format-value.copied { border-color: #22c55e; }
+
+    /* Manual input */
+    .manual {
+      padding: 0 14px 10px;
+      display: flex;
+      gap: 6px;
+    }
+    .manual input {
+      flex: 1;
+      padding: 7px 8px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      outline: none;
+    }
+    .manual input:focus { border-color: var(--accent); }
+    .manual .swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* History */
+    .history-section {
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .history-header h3 {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .clear-btn {
+      font-size: 11px;
+      color: var(--text2);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .clear-btn:hover { color: #ef4444; }
+    .history-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .history-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.1s;
+      position: relative;
+    }
+    .history-swatch:hover { transform: scale(1.15); z-index: 1; }
+    .empty-history {
+      color: var(--text2);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 16px;
+      background: #22c55e;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 11px;
+      display: none;
+    }
+    .toast.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Color Picker Pro</h1>
+    <span style="font-size:11px;color:var(--text2)">Alt+C</span>
+  </div>
+
+  <div class="pick-section">
+    <button class="pick-btn" id="pickBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 22l1-1h3l9-9"/>
+        <path d="M15.5 3.5a2.12 2.12 0 0 1 3 3L7 18l-4 1 1-4z"/>
+      </svg>
+      Pick Color from Page
+    </button>
+  </div>
+
+  <div class="manual">
+    <input type="text" id="manualInput" placeholder="#hex, rgb(), or hsl()">
+    <div class="swatch" id="manualSwatch"></div>
+  </div>
+
+  <div class="current" id="currentSection">
+    <div class="color-preview" id="colorPreview"></div>
+    <div class="formats">
+      <div class="format-row">
+        <span class="format-label">HEX</span>
+        <div class="format-value" id="hexValue" title="Click to copy"></div>
+      </div>
+      <div class="format-row">
+        <span class="format-label">RGB</span>
+        <div class="format-value" id="rgbValue" title="Click to copy"></div>
+      </div>
+      <div class="format-row">
+        <span class="format-label">HSL</span>
+        <div class="format-value" id="hslValue" title="Click to copy"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <div class="history-header">
+      <h3>History</h3>
+      <button class="clear-btn" id="clearHistory">Clear</button>
+    </div>
+    <div class="history-grid" id="historyGrid">
+      <div class="empty-history">No colors picked yet</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
